@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleDTO;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class DTOServiceProvider extends PackageServiceProvider
+final class DTOServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {

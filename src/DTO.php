@@ -1,108 +1,136 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleDTO;
 
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use InvalidArgumentException;
 use ReflectionClass;
+use ReflectionException;
+use ReflectionNamedType;
+use ReflectionParameter;
+use ReflectionProperty;
 
+/**
+ * @implements Arrayable<string, mixed>
+ */
 abstract readonly class DTO implements Arrayable, Jsonable
 {
-    public static function from(array $data = []): static
+    /**
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ReflectionException
+     */
+    final public static function from(array $data = []): static
     {
         $reflection = new ReflectionClass(static::class);
         $constructor = $reflection->getConstructor();
 
         if ($constructor === null) {
-            return new static;
+            return $reflection->newInstance();
         }
 
         $arguments = [];
+
         foreach ($constructor->getParameters() as $parameter) {
-            $parameterName = $parameter->getName();
-            $parameterType = $parameter->getType();
-
-            if (! array_key_exists($parameterName, $data)) {
-                if ($parameter->isDefaultValueAvailable()) {
-                    $arguments[$parameterName] = $parameter->getDefaultValue();
-
-                    continue;
-                }
-
-                if ($parameter->allowsNull()) {
-                    $arguments[$parameterName] = null;
-
-                    continue;
-                }
-
-                throw new InvalidArgumentException(
-                    "Missing required parameter '{$parameterName}' for DTO ".static::class
-                );
-            }
-
-            if ($parameterType === null || $parameterType->isBuiltin()) {
-                $arguments[$parameterName] = $data[$parameterName];
-
-                continue;
-            }
-
-            if (is_subclass_of($parameterType->getName(), DTO::class)) {
-                $arguments[$parameterName] = $parameterType->getName()::from($data[$parameterName]);
-
-                continue;
-            }
-
-            if (class_exists($parameterType->getName())) {
-                $arguments[$parameterName] = new ($parameterType->getName())(...$data[$parameterName]);
-
-                continue;
-            }
-
-            $arguments[$parameterName] = $data[$parameterName];
+            $arguments[$parameter->getName()] = self::resolveParameterValue($parameter, $data);
         }
 
         return $reflection->newInstanceArgs($arguments);
     }
 
-    public function toArray(): array
+    final public function toArray(): array
     {
         $reflection = new ReflectionClass(static::class);
-        $properties = $reflection->getProperties();
         $array = [];
-        $nonNullOutput = $reflection->getAttributes('SimpleDTO\Attributes\NonNullOutput');
+        $skipNulls = $reflection->getAttributes('SimpleDTO\Attributes\NonNullOutput') !== [];
 
-        foreach ($properties as $property) {
-            $hidden = $property->getAttributes('SimpleDTO\Attributes\Hidden');
-
-            if (! empty($hidden)) {
+        foreach ($reflection->getProperties() as $property) {
+            if (! $this->shouldIncludeProperty($property, $skipNulls)) {
                 continue;
             }
 
-            if (! empty($nonNullOutput) && $property->getValue($this) === null) {
-                continue;
-            }
-
-            if ($property->getValue($this) instanceof DTO) {
-                $array[$property->getName()] = $property->getValue($this)->toArray();
-
-                continue;
-            }
-
-            if (is_object($property->getValue($this))) {
-                $array[$property->getName()] = json_decode(json_encode($property->getValue($this)), true);
-
-                continue;
-            }
-
-            $array[$property->getName()] = $property->getValue($this);
+            $value = $property->getValue($this);
+            $array[$property->getName()] = $this->convertValueToArray($value);
         }
 
         return $array;
     }
 
-    public function toJson($options = 0): string
+    final public function toJson($options = 0): ?string
     {
-        return json_encode($this->toArray(), $options);
+        return json_encode($this->toArray(), $options) ?: null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ReflectionException
+     */
+    private static function resolveParameterValue(ReflectionParameter $parameter, array $data): mixed
+    {
+        $parameterName = $parameter->getName();
+        $value = $data[$parameterName] ?? null;
+
+        if ($value === null) {
+            if ($parameter->isDefaultValueAvailable()) {
+                return $parameter->getDefaultValue();
+            }
+
+            if ($parameter->allowsNull()) {
+                return null;
+            }
+
+            throw new InvalidArgumentException(
+                "Missing required parameter '{$parameterName}' for DTO ".static::class
+            );
+        }
+
+        $parameterType = $parameter->getType();
+
+        if ((! $parameterType instanceof ReflectionNamedType) || $parameterType->isBuiltin()) {
+            return $value;
+        }
+
+        $typeName = $parameterType->getName();
+        if (is_subclass_of($typeName, self::class)) {
+            if (! is_array($value)) {
+                throw new InvalidArgumentException(
+                    "Invalid value for parameter '{$parameterName}' in DTO ".static::class
+                );
+            }
+
+            return $typeName::from($value);
+        }
+
+        return class_exists($typeName)
+            ? new $typeName(...$value)
+            : $value;
+    }
+
+    private function shouldIncludeProperty(ReflectionProperty $property, bool $skipNulls): bool
+    {
+        if (! empty($property->getAttributes('SimpleDTO\Attributes\Hidden'))) {
+            return false;
+        }
+
+        return ! ($skipNulls && $property->getValue($this) === null);
+    }
+
+    private function convertValueToArray(mixed $value): mixed
+    {
+        if ($value instanceof self) {
+            return $value->toArray();
+        }
+
+        if (is_object($value)) {
+            $jsonEncode = json_encode($value) ?: '';
+
+            return json_decode($jsonEncode, true);
+        }
+
+        return $value;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleDTO\Tests\classes;
 
 final readonly class GenericClass

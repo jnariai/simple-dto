@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use SimpleDTO\Tests\classes\GenericClass;
 use SimpleDTO\Tests\classes\GenericDTO;
 use SimpleDTO\Tests\classes\GenericDTOWithAttributes;
@@ -27,13 +29,13 @@ it('dto with required only, execute toArray method successfully', function () {
     ]);
 
     expect($genericDto->toArray())->toBe([
-        'property_bool' => true,
-        'property_string' => null,
-        'property_array' => null,
-        'property_object' => null,
-        'property_int' => null,
+        'property_bool'      => true,
+        'property_string'    => null,
+        'property_array'     => null,
+        'property_object'    => null,
+        'property_int'       => null,
         'generic_nested_dto' => null,
-        'generic_class' => null,
+        'generic_class'      => null,
     ]);
 });
 
@@ -48,11 +50,11 @@ it('dto with required only, execute toJson method successfully', function () {
 
 it('create DTO with all parameters', function () {
     $genericDto = GenericDTO::from([
-        'property_bool' => true,
-        'property_string' => 'string',
-        'property_array' => ['array'],
-        'property_object' => (object) ['object'],
-        'property_int' => 1,
+        'property_bool'      => true,
+        'property_string'    => 'string',
+        'property_array'     => ['array'],
+        'property_object'    => (object) ['object'],
+        'property_int'       => 1,
         'generic_nested_dto' => [
             'property_string' => 'nested dto string',
         ],
