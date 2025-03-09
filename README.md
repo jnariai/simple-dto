@@ -1,19 +1,10 @@
-# This is my package simple-dto
+# Simple DTO
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/jnariai/simple-dto.svg?style=flat-square)](https://packagist.org/packages/jnariai/simple-dto)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/jnariai/simple-dto/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/jnariai/simple-dto/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/jnariai/simple-dto/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/jnariai/simple-dto/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/jnariai/simple-dto.svg?style=flat-square)](https://packagist.org/packages/jnariai/simple-dto)
+Immutable Data Transfer Object (DTO) for PHP inspired by [Laravel Data](https://github.com/spatie/laravel-data) and [Bags](https://github.com/dshafik/bag)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+## Introduction
 
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/simple-dto.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/simple-dto)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+This is a package to create minimal immutable Data Transfer Object for PHP with some handy features like the method from to create the dto from array, it implements `Arrayable` and `Jsonable` interfaces, and also has two attributes to use `#[NonNullOutput]` and `#[Hidden]` to help in the output transformation.
 
 ## Installation
 
@@ -22,62 +13,84 @@ You can install the package via composer:
 ```bash
 composer require jnariai/simple-dto
 ```
-
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="simple-dto-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="simple-dto-config"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="simple-dto-views"
-```
-
 ## Usage
 
 ```php
-$dTO = new SimpleDTO\DTO();
-echo $dTO->echoPhrase('Hello, SimpleDTO!');
+use SimpleDTO\DTO;
+
+final readonly class MyDTO extends DTO
+{
+    public function __construct(
+        public bool $property_bool,
+        public ?string $property_string,
+        public string $sensitive_data,
+    ) {}
+}
 ```
 
-## Testing
+You can create the DTO using the static function `from::` and pass an array of data
 
-```bash
-composer test
+```php
+$myDTO = MyDTO::from([
+    'property_bool' => true,
+    'sensitive_data' => 'sensitive data',
+]);
+
+// You don't need to pass properties that can be null, it will automatically be set to null
+/* MyDTO {
+  +property_bool: true
+  +property_string: null
+  +sensitive_data: "sensitive data"
+}
+*/ 
 ```
 
-## Changelog
+You can also get a toArray an toJson method
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+```php
+$myDTO->toArray(); // ['property_bool' => true, 'property_string' => null, 'sensitive_data' => 'sensitive data']
+$myDTO->toJson(); // {"property_bool":true,"property_string":null,"sensitive_data":"sensitive data"}
+```
 
-## Contributing
+You also get two available attributes to use. `#[NonNullOutput]` and `#[Hidden]`.
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+`#[NonNullOutput]` is a class Attribute and when using toArray or toJson it will only return properties that are not null.
 
-## Security Vulnerabilities
+```php
+use SimpleDTO\DTO;
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+#[NonNullOutput]
+final readonly class MyDTO extends DTO
+{
+    public function __construct(
+        public bool $property_bool,
+        public ?string $property_string,
+        public string $sensitive_data,
+    ) {}
+}
 
-## Credits
+$myDTO->toArray(); // ['property_bool' => true, 'sensitive_data' => 'sensitive data']
+$myDTO->toJson(); // {"property_bool":true,"sensitive_data":"sensitive data"}
+```
 
-- [Jonathan Nariai](https://github.com/jnariai)
-- [All Contributors](../../contributors)
+`#[Hidden]` is a property Attribute and when using toArray or toJson it will not return the property.
+
+```php
+use SimpleDTO\DTO;
+
+final readonly class MyDTO extends DTO
+{
+    public function __construct(
+    public bool $property_bool,
+    public ?string $property_string,
+    #[Hidden]
+    public string $sensitive_data,
+    ) {}
+}
+
+$myDTO->toArray(); // ['property_bool' => true, 'property_string' => null]
+$myDTO->toJson(); // {"property_bool":true,"property_string":null}
+```
 
 ## License
 
