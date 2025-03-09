@@ -95,15 +95,23 @@ abstract readonly class DTO implements Arrayable, Jsonable
         }
 
         $typeName = $parameterType->getName();
-        if (is_subclass_of($typeName, self::class)) {
-            if (! is_array($value)) {
-                throw new InvalidArgumentException(
-                    "Invalid value for parameter '{$parameterName}' in DTO ".static::class
-                );
-            }
+if (is_subclass_of($typeName, self::class)) {
+    if (! is_array($value)) {
+        throw new InvalidArgumentException(
+            "Invalid value for parameter '{$parameterName}' in DTO ".static::class
+        );
+    }
 
-            return $typeName::from($value);
-        }
+    $nonStringKeys = array_filter(array_keys($value), fn($key) => !is_string($key));
+    if (!empty($nonStringKeys)) {
+        throw new InvalidArgumentException(
+            "Invalid array keys for parameter '{$parameterName}' in DTO ".static::class.'. Expected string keys.'
+        );
+    }
+
+    /** @var array<string, mixed> $value */
+    return $typeName::from($value);
+}
 
         return class_exists($typeName)
             ? new $typeName(...$value)
