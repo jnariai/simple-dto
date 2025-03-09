@@ -7,7 +7,7 @@ use SimpleDTO\Tests\classes\GenericDTO;
 use SimpleDTO\Tests\classes\GenericDTOWithAttributes;
 use SimpleDTO\Tests\classes\GenericNestedDTO;
 
-it('create DTO with required parameters only', function () {
+it('create DTO with required parameters only', function (): void {
     $genericDto = GenericDTO::from([
         'property_bool' => true,
     ]);
@@ -23,7 +23,7 @@ it('create DTO with required parameters only', function () {
         ->and(get_object_vars($genericDto))->toHaveCount(7);
 });
 
-it('dto with required only, execute toArray method successfully', function () {
+it('dto with required only, execute toArray method successfully', function (): void {
     $genericDto = GenericDTO::from([
         'property_bool' => true,
     ]);
@@ -39,7 +39,7 @@ it('dto with required only, execute toArray method successfully', function () {
     ]);
 });
 
-it('dto with required only, execute toJson method successfully', function () {
+it('dto with required only, execute toJson method successfully', function (): void {
     $genericDto = GenericDTO::from([
         'property_bool' => true,
     ]);
@@ -48,7 +48,7 @@ it('dto with required only, execute toJson method successfully', function () {
         ->toBe('{"property_bool":true,"property_string":null,"property_array":null,"property_object":null,"property_int":null,"generic_nested_dto":null,"generic_class":null}');
 });
 
-it('create DTO with all parameters', function () {
+it('create DTO with all parameters', function (): void {
     $genericDto = GenericDTO::from([
         'property_bool'      => true,
         'property_string'    => 'string',
@@ -76,7 +76,7 @@ it('create DTO with all parameters', function () {
         ->and(get_object_vars($genericDto))->toHaveCount(7);
 });
 
-it('execute toArray with attribute NonNullOutput', function () {
+it('execute toArray with attribute NonNullOutput', function (): void {
     $genericDto = GenericDTOWithAttributes::from([
         'property_string' => 'string',
     ]);

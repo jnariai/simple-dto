@@ -102,8 +102,8 @@ abstract readonly class DTO implements Arrayable, Jsonable
                 );
             }
 
-            $nonStringKeys = array_filter(array_keys($value), fn ($key) => ! is_string($key));
-            if (! empty($nonStringKeys)) {
+            $nonStringKeys = array_filter(array_keys($value), fn ($key): bool => ! is_string($key));
+            if ($nonStringKeys !== []) {
                 throw new InvalidArgumentException(
                     "Invalid array keys for parameter '{$parameterName}' in DTO ".static::class.'. Expected string keys.'
                 );
@@ -120,7 +120,7 @@ abstract readonly class DTO implements Arrayable, Jsonable
 
     private function shouldIncludeProperty(ReflectionProperty $property, bool $skipNulls): bool
     {
-        if (! empty($property->getAttributes('SimpleDTO\Attributes\Hidden'))) {
+        if ($property->getAttributes('SimpleDTO\Attributes\Hidden') !== []) {
             return false;
         }
 
