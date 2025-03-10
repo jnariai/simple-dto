@@ -1,6 +1,7 @@
 {
     "name": "jnariai/simple-dto",
     "description": "A simple data transfer object for Laravel",
+    "version": "1.0.0",
     "type": "library",
     "require": {
         "php": "^8.2",
@@ -67,6 +68,6 @@
             ]
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
