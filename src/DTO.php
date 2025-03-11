@@ -20,25 +20,28 @@ abstract readonly class DTO implements Arrayable, Jsonable
 {
     /**
      * @param  array<string, mixed>  $data
-     *
-     * @throws ReflectionException
      */
     final public static function from(array $data = []): static
     {
-        $reflection = new ReflectionClass(static::class);
-        $constructor = $reflection->getConstructor();
+        try {
+            $reflection = new ReflectionClass(static::class);
+            $constructor = $reflection->getConstructor();
 
-        if ($constructor === null) {
-            return $reflection->newInstance();
+            if ($constructor === null) {
+                return $reflection->newInstance();
+            }
+
+            $arguments = [];
+
+            foreach ($constructor->getParameters() as $parameter) {
+                $arguments[$parameter->getName()] = self::resolveParameterValue($parameter, $data);
+            }
+
+            return $reflection->newInstanceArgs($arguments);
+        } catch (ReflectionException $e) {
+            throw new InvalidArgumentException($e->getMessage(), $e->getCode(), $e);
         }
 
-        $arguments = [];
-
-        foreach ($constructor->getParameters() as $parameter) {
-            $arguments[$parameter->getName()] = self::resolveParameterValue($parameter, $data);
-        }
-
-        return $reflection->newInstanceArgs($arguments);
     }
 
     final public function toArray(): array
@@ -66,8 +69,6 @@ abstract readonly class DTO implements Arrayable, Jsonable
 
     /**
      * @param  array<string, mixed>  $data
-     *
-     * @throws ReflectionException
      */
     private static function resolveParameterValue(ReflectionParameter $parameter, array $data): mixed
     {
